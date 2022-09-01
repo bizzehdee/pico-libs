@@ -9,7 +9,7 @@ if (NOT TARGET _pico_libs_inclusion_marker)
         message(FATAL_ERROR "Require at least Raspberry Pi Pico SDK version 1.2.0")
     endif()
 
-    project(pico-libs C CXX)
+    project(pico_libs C CXX)
 
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_CXX_STANDARD 17)

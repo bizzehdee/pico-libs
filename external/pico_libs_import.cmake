@@ -1,6 +1,6 @@
 # This is a copy of <PICO_LIBS_PATH>/external/pico_libs_import.cmake
 
-# This can be dropped into an external project to help locate pico-libs
+# This can be dropped into an external project to help locate pico_libs
 # It should be include()ed prior to project()
 
 if (DEFINED ENV{PICO_LIBS_PATH} AND (NOT PICO_LIBS_PATH))
@@ -26,19 +26,19 @@ if (NOT PICO_LIBS_PATH)
             get_filename_component(FETCHCONTENT_BASE_DIR "${PICO_LIBS_FETCH_FROM_GIT_PATH}" REALPATH BASE_DIR "${CMAKE_SOURCE_DIR}")
         endif ()
         FetchContent_Declare(
-                pico-libs
-                GIT_REPOSITORY https://github.com/bizzehdee/pico-libs
+                pico_libs
+                GIT_REPOSITORY https://github.com/bizzehdee/pico_libs
                 GIT_TAG master
         )
-        if (NOT pico-libs)
+        if (NOT pico_libs)
             message("Downloading Raspberry Pi Pico Extras")
-            FetchContent_Populate(pico-libs)
+            FetchContent_Populate(pico_libs)
             set(PICO_LIBS_PATH ${pico_libs_SOURCE_DIR})
         endif ()
         set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})
     else ()
-        if (PICO_SDK_PATH AND EXISTS "${PICO_SDK_PATH}/../pico-libs")
-            set(PICO_LIBS_PATH ${PICO_SDK_PATH}/../pico-libs)
+        if (PICO_SDK_PATH AND EXISTS "${PICO_SDK_PATH}/../pico_libs")
+            set(PICO_LIBS_PATH ${PICO_SDK_PATH}/../pico_libs)
             message("Defaulting PICO_LIBS_PATH as sibling of PICO_SDK_PATH: ${PICO_LIBS_PATH}")
         else()
             message(FATAL_ERROR
@@ -59,4 +59,4 @@ endif ()
 
 set(PICO_LIBS_PATH ${PICO_LIBS_PATH} CACHE PATH "Path to the PICO LIBS" FORCE)
 
-add_subdirectory(${PICO_LIBS_PATH} pico-libs)
+add_subdirectory(${PICO_LIBS_PATH} pico_libs)
