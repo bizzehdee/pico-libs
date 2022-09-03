@@ -13,6 +13,7 @@ BMP280::~BMP280()
 
 bool BMP280::begin(uint8_t addr, uint8_t chipid)
 {
+    this->addr = addr;
     _sensorID = read8(BMP280_REGISTER_CHIPID);
     if (_sensorID != chipid)
     {
