@@ -3,6 +3,7 @@
 #include "bus_register_bits.h"
 #include "hardware/timer.h"
 #include <string.h>
+#include <stdio.h>
 
 MPU6050::MPU6050()
 {
@@ -16,7 +17,7 @@ bool MPU6050::begin(i2c_inst_t *i2cInst, uint8_t i2c_addr, int32_t sensorID)
 {
 	i2c_dev = new I2CDevice(i2c_addr, i2cInst);
 
-	if (!i2c_dev->begin())
+	if (!i2c_dev->begin(false))
 	{
 		return false;
 	}
@@ -41,14 +42,17 @@ void MPU6050::reset(void)
 	BusRegisterBits device_reset =
 		BusRegisterBits(&power_mgmt_1, 1, 7);
 
-	device_reset.write(1); // reset
+	device_reset.write(1);
+
 	while (device_reset.read() == 1)
 	{ // check for the post reset value
-		sleep_us(1);
+		sleep_ms(1);
 	}
-	sleep_us(100);
+	sleep_ms(100);
 
 	sig_path_reset.write(0x7);
+
+	sleep_ms(100);
 }
 
 void MPU6050::setSampleRateDivisor(uint8_t divisor)
@@ -89,6 +93,8 @@ bool MPU6050::_init(int32_t sensor_id)
 		BusRegister(i2c_dev, MPU6050_PWR_MGMT_1, 1);
 
 	power_mgmt_1.write(0x01);
+
+	sleep_ms(100);
 
 	return true;
 }

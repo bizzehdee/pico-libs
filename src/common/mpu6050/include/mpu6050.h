@@ -194,7 +194,6 @@ public:
 private:
 	virtual bool _init(int32_t sensor_id);
 	void _read(void);
-
 private:
 	I2CDevice *i2c_dev = NULL;
 	uint16_t _sensorid_accel, ///< ID number for accelerometer
