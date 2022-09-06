@@ -32,75 +32,92 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "i2c_device.h"
+#include "stdio.h"
 
 I2CDevice::I2CDevice(uint8_t addr, i2c_inst_t *i2cInst)
 {
-    _addr = addr;
-    _i2cInst = i2cInst;
-    _begun = false;
-    _maxBufferSize = 32;
+  _addr = addr;
+  _i2cInst = i2cInst;
+  _begun = false;
+  _maxBufferSize = 16;
 }
 
 uint8_t I2CDevice::address(void)
 {
-    return _addr;
+  return _addr;
 }
 
 bool I2CDevice::begin(bool addr_detect)
 {
-    _begun = true;
+  _begun = true;
 
-    if (addr_detect)
-    {
-        return detected();
-    }
-    return true;
+  if (addr_detect)
+  {
+    return detected();
+  }
+  return true;
 }
 
 void I2CDevice::end(void)
 {
-    _begun = false;
+  _begun = false;
 }
 
 bool I2CDevice::detected(void)
 {
-    if (i2c_write_blocking(_i2cInst, _addr, NULL, 0, false) == 0)
-    {
-        return true;
-    }
-
+  if (!_begun && !begin())
+  {
     return false;
+  }
+
+  if (i2c_write_blocking(_i2cInst, _addr, NULL, 0, false) == 0)
+  {
+    return true;
+  }
+
+  return false;
 }
 
 bool I2CDevice::read(uint8_t *buffer, size_t len, bool stop)
 {
-    size_t pos = 0;
-    while (pos < len)
+  size_t pos = 0;
+  while (pos < len)
+  {
+    size_t read_len = ((len - pos) > maxBufferSize()) ? maxBufferSize() : (len - pos);
+    bool read_stop = (pos < (len - read_len)) ? false : stop;
+    if (!_read(buffer + pos, read_len, read_stop))
     {
-        size_t read_len = ((len - pos) > maxBufferSize()) ? maxBufferSize() : (len - pos);
-        bool read_stop = (pos < (len - read_len)) ? false : stop;
-        
-        if (!_read(buffer + pos, read_len, read_stop)) {
-            return false;
-        }
-
-        pos += read_len;
+      return false;
     }
-    return true;
+    pos += read_len;
+  }
+  return true;
 }
 
 bool I2CDevice::write(const uint8_t *buffer, size_t len, bool stop, const uint8_t *prefix_buffer, size_t prefix_len)
 {
-  if ((prefix_len != 0) && (prefix_buffer != nullptr)) {
-    if (i2c_write_blocking(_i2cInst, _addr, prefix_buffer, prefix_len, !stop) != prefix_len) {
-      return false;
-    }
+  uint8_t fullBuffer[prefix_len+len];
+
+  for(int x=0; x<prefix_len; x++)
+  {
+    fullBuffer[x] = prefix_buffer[x];
   }
 
-  if (i2c_write_blocking(_i2cInst, _addr, buffer, len, !stop) != len) {
+  for(int x=0; x<len; x++)
+  {
+    fullBuffer[prefix_len+x] = buffer[x];
+  }
+
+  if ((len + prefix_len) > maxBufferSize())
+  {
     return false;
   }
-  
+
+  if (i2c_write_blocking(_i2cInst, _addr, fullBuffer, prefix_len+len, !stop) != prefix_len+len)
+  {
+    return false;
+  }
+
   return true;
 }
 
@@ -108,7 +125,8 @@ bool I2CDevice::write_then_read(const uint8_t *write_buffer, size_t write_len,
                                 uint8_t *read_buffer, size_t read_len,
                                 bool stop)
 {
-  if (!write(write_buffer, write_len, stop)) {
+  if (!write(write_buffer, write_len, stop))
+  {
     return false;
   }
 
@@ -123,10 +141,10 @@ bool I2CDevice::setSpeed(uint32_t desiredclk)
 
 bool I2CDevice::_read(uint8_t *buffer, size_t len, bool stop)
 {
-    if (i2c_read_blocking(_i2cInst, _addr, buffer, len, !stop) == len)
-    {
-        return true;
-    }
+  if (i2c_read_blocking(_i2cInst, _addr, buffer, len, !stop) == len)
+  {
+    return true;
+  }
 
-    return false;
+  return false;
 }

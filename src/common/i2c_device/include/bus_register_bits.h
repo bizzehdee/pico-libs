@@ -69,9 +69,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "bus_register.h"
 
-#define LSBFIRST 0
-#define MSBFIRST 1
-
 class BusRegisterBits
 {
 public:
