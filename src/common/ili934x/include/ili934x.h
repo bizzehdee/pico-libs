@@ -31,11 +31,6 @@
 #define _PGAMCTRL 0xe0  // Positive Gamma Control
 #define _NGAMCTRL 0xe1  // Negative Gamma Control
 
-#define MADCTL_R0DEG 0x40
-#define MADCTL_R90DEG 0x20
-#define MADCTL_R180DEG 0x80
-#define MADCTL_R270DEG 0xE0
-
 #define MADCTL_MY 0x80  ///< Bottom to top
 #define MADCTL_MX 0x40  ///< Right to left
 #define MADCTL_MV 0x20  ///< Reverse Mode
@@ -72,13 +67,14 @@ public:
     void setPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b);
     void fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r, uint8_t g, uint8_t b);
     void clear(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
+    void blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *bltBuf);
 
+    uint16_t colour565(uint8_t r, uint8_t g, uint8_t b);
 private:
     void _write(uint8_t cmd, uint8_t *data = NULL, size_t dataLen = 0);
     void _data(uint8_t *data, size_t dataLen = 0);
     void _writeBlock(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint8_t *data = NULL, size_t dataLen = 0);
-    uint16_t _colour(uint8_t r, uint8_t g, uint8_t b);
-
+    
 private:
     spi_inst_t *_spi = NULL;
     uint8_t _cs;

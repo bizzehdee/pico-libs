@@ -54,52 +54,52 @@ void ILI934X::init()
 
 void ILI934X::setRotation(ILI934X_ROTATION rotation)
 {
-    uint8_t mode = MADCTL_R0DEG | MADCTL_BGR;
+    uint8_t mode = MADCTL_MX | MADCTL_RGB;
     switch (rotation)
     {
     case R0DEG:
-        mode = MADCTL_MX | MADCTL_BGR;
+        mode = MADCTL_MX | MADCTL_RGB;
         this->_width = this->_init_width;
         this->_height = this->_init_height;
         break;
     case R90DEG:
-        mode = MADCTL_MV | MADCTL_BGR;
+        mode = MADCTL_MV | MADCTL_RGB;
         this->_width = this->_init_height;
         this->_height = this->_init_width;
         break;
     case R180DEG:
-        mode = MADCTL_MY | MADCTL_BGR;
+        mode = MADCTL_MY | MADCTL_RGB;
         this->_width = this->_init_width;
         this->_height = this->_init_height;
         break;
     case R270DEG:
-        mode = MADCTL_MY | MADCTL_MX | MADCTL_MV | MADCTL_BGR;
+        mode = MADCTL_MY | MADCTL_MX | MADCTL_MV | MADCTL_RGB;
         this->_width = this->_init_height;
         this->_height = this->_init_width;
         break;
     case MIRRORED0DEG:
-        mode = MADCTL_MY | MADCTL_MX | MADCTL_BGR;
+        mode = MADCTL_MY | MADCTL_MX | MADCTL_RGB;
         this->_width = this->_init_width;
         this->_height = this->_init_height;
         break;
     case MIRRORED90DEG:
-        mode = MADCTL_MX | MADCTL_MV | MADCTL_BGR;
+        mode = MADCTL_MX | MADCTL_MV | MADCTL_RGB;
         this->_width = this->_init_height;
         this->_height = this->_init_width;
         break;
     case MIRRORED180DEG:
-        mode = MADCTL_BGR;
+        mode = MADCTL_RGB;
         this->_width = this->_init_width;
         this->_height = this->_init_height;
         break;
     case MIRRORED270DEG:
-        mode = MADCTL_MY | MADCTL_MV | MADCTL_BGR;
+        mode = MADCTL_MY | MADCTL_MV | MADCTL_RGB;
         this->_width = this->_init_height;
         this->_height = this->_init_width;
         break;
     }
 
-    uint8_t buffer[1] = { mode };
+    uint8_t buffer[1] = {mode};
     _write(_MADCTL, (uint8_t *)buffer, 1);
 }
 
@@ -109,7 +109,7 @@ void ILI934X::setPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
         return;
 
     uint16_t colour[1];
-    colour[0] = _colour(r, g, b);
+    colour[0] = __builtin_bswap16(colour565(r, g, b));
 
     _writeBlock(x, y, x, y, (uint8_t *)colour, 2);
 }
@@ -124,7 +124,7 @@ void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r
     uint16_t buffer[_MAX_CHUNK_SIZE];
     for (int x = 0; x < _MAX_CHUNK_SIZE; x++)
     {
-        buffer[x] = _colour(r, g, b);
+        buffer[x] = __builtin_bswap16(colour565(r, g, b));
     }
 
     uint16_t totalChunks = (uint16_t)((double)(w * h) / _MAX_CHUNK_SIZE);
@@ -136,6 +136,43 @@ void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r
     {
         _data((uint8_t *)buffer, _MAX_CHUNK_SIZE * 2);
     }
+
+    if (remaining > 0)
+    {
+        _data((uint8_t *)buffer, remaining * 2);
+    }
+}
+
+void ILI934X::blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *bltBuf)
+{
+    uint16_t _x = MIN(_width - 1, MAX(0, x));
+    uint16_t _y = MIN(_height - 1, MAX(0, y));
+    uint16_t _w = MIN(_width - x, MAX(1, w));
+    uint16_t _h = MIN(_height - y, MAX(1, h));
+
+    uint16_t totalChunks = (uint16_t)((double)(w * h) / _MAX_CHUNK_SIZE);
+    uint16_t remaining = (uint16_t)((w * h) % _MAX_CHUNK_SIZE);
+    uint16_t written = 0;
+
+    uint16_t buffer[_MAX_CHUNK_SIZE];
+
+    for (uint16_t iy = 0; iy < _h; iy++)
+    {
+        for (uint16_t ix = 0; ix < _w; ix++)
+        {
+            uint16_t idx = ix+iy*w - written;
+            if(idx >= _MAX_CHUNK_SIZE)
+            {
+                _data((uint8_t *)buffer, _MAX_CHUNK_SIZE * 2);
+                written += _MAX_CHUNK_SIZE;
+                idx   -= _MAX_CHUNK_SIZE;
+            }
+
+            buffer[idx] = bltBuf[ix+iy*w]; // get pixel from blt buffer
+        }
+    }
+
+    remaining = w*h - written;
 
     if (remaining > 0)
     {
@@ -198,7 +235,7 @@ void ILI934X::_writeBlock(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, ui
     _write(_RAMWR, data, dataLen);
 }
 
-uint16_t ILI934X::_colour(uint8_t r, uint8_t g, uint8_t b)
+uint16_t ILI934X::colour565(uint8_t r, uint8_t g, uint8_t b)
 {
-    return (r & 0xf8) << 8 | (b & 0xfc) << 3 | g >> 3;
+    return (((r >> 3) & 0x1f) << 11) | (((g >> 2) & 0x3f) << 5) | ((b >> 3) & 0x1f);
 }
