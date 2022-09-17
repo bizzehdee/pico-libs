@@ -5,13 +5,19 @@
 #include <cstring>
 
 #ifndef pgm_read_byte
-#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#define pgm_read_byte(addr) (*(const uint8_t *)(addr))
 #endif
 #ifndef pgm_read_word
-#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+#define pgm_read_word(addr) (*(const uint16_t *)(addr))
 #endif
 #ifndef pgm_read_dword
-#define pgm_read_dword(addr) (*(const unsigned long *)(addr))
+#define pgm_read_dword(addr) (*(const uint32_t *)(addr))
+#endif
+#ifndef __swap_int(a, b)
+#define __swap_int(a, b)   \
+    a = (a & b) + (a | b); \
+    b = a + (~b) + 1;      \
+    a = a + (~b) + 1;
 #endif
 
 ILI934X::ILI934X(spi_inst_t *spi, uint8_t cs, uint8_t dc, uint8_t rst, uint16_t width, uint16_t height, ILI934X_ROTATION rotation)
@@ -113,18 +119,18 @@ void ILI934X::setRotation(ILI934X_ROTATION rotation)
     _write(_MADCTL, (uint8_t *)buffer, 1);
 }
 
-void ILI934X::setPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
+void ILI934X::setPixel(uint16_t x, uint16_t y, uint16_t colour)
 {
     if (x < 0 || x >= _width || y < 0 || y >= _height)
         return;
 
-    uint16_t colour[1];
-    colour[0] = __builtin_bswap16(colour565(r, g, b));
+    uint16_t buffer[1];
+    buffer[0] = __builtin_bswap16(colour);
 
-    _writeBlock(x, y, x, y, (uint8_t *)colour, 2);
+    _writeBlock(x, y, x, y, (uint8_t *)buffer, 2);
 }
 
-void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r, uint8_t g, uint8_t b)
+void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour)
 {
     uint16_t _x = MIN(_width - 1, MAX(0, x));
     uint16_t _y = MIN(_height - 1, MAX(0, y));
@@ -134,7 +140,7 @@ void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r
     uint16_t buffer[_MAX_CHUNK_SIZE];
     for (int x = 0; x < _MAX_CHUNK_SIZE; x++)
     {
-        buffer[x] = __builtin_bswap16(colour565(r, g, b));
+        buffer[x] = __builtin_bswap16(colour);
     }
 
     uint16_t totalChunks = (uint16_t)((double)(w * h) / _MAX_CHUNK_SIZE);
@@ -150,6 +156,97 @@ void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r
     if (remaining > 0)
     {
         _data((uint8_t *)buffer, remaining * 2);
+    }
+}
+
+void ILI934X::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
+{
+    uint16_t _x0 = x0;
+    uint16_t _y0 = y0;
+    uint16_t _x1 = x1;
+    uint16_t _y1 = y1;
+
+    int16_t steep = abs(_y1 - _y0) > abs(_x1 - _x0);
+    if (steep)
+    {
+        __swap_int(_x0, _y0);
+        __swap_int(_x1, _y1);
+    }
+
+    if (x0 > x1)
+    {
+        __swap_int(_x0, _x1);
+        __swap_int(_y0, _y1);
+    }
+
+    int16_t dx, dy;
+    dx = _x1 - _x0;
+    dy = abs(_y1 - _y0);
+
+    int16_t err = dx / 2;
+    int16_t ystep;
+
+    if (_y0 < _y1)
+    {
+        ystep = 1;
+    }
+    else
+    {
+        ystep = -1;
+    }
+
+    for (; _x0 <= _x1; _x0++)
+    {
+        if (steep)
+        {
+            setPixel(_y0, _x0, color);
+        }
+        else
+        {
+            setPixel(_x0, _y0, color);
+        }
+        err -= dy;
+        if (err < 0)
+        {
+            _y0 += ystep;
+            err += dx;
+        }
+    }
+}
+
+void ILI934X::drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
+{
+    int16_t f = 1 - r;
+    int16_t ddF_x = 1;
+    int16_t ddF_y = -2 * r;
+    int16_t x = 0;
+    int16_t y = r;
+
+    setPixel(x0, y0 + r, color);
+    setPixel(x0, y0 - r, color);
+    setPixel(x0 + r, y0, color);
+    setPixel(x0 - r, y0, color);
+
+    while (x < y)
+    {
+        if (f >= 0)
+        {
+            y--;
+            ddF_y += 2;
+            f += ddF_y;
+        }
+        x++;
+        ddF_x += 2;
+        f += ddF_x;
+
+        setPixel(x0 + x, y0 + y, color);
+        setPixel(x0 - x, y0 + y, color);
+        setPixel(x0 + x, y0 - y, color);
+        setPixel(x0 - x, y0 - y, color);
+        setPixel(x0 + y, y0 + x, color);
+        setPixel(x0 - y, y0 + x, color);
+        setPixel(x0 + y, y0 - x, color);
+        setPixel(x0 - y, y0 - x, color);
     }
 }
 
@@ -190,9 +287,8 @@ void ILI934X::blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *blt
     }
 }
 
-uint16_t ILI934X::writeChar(uint16_t x, uint16_t y, char chr, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font)
+void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, uint8_t size_x, uint8_t size_y, GFXfont *font)
 {
-    // https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp#L1181
     char c = chr - (uint8_t)pgm_read_byte(&font->first);
     GFXglyph *glyph = font->glyph + c;
     uint8_t *bitmap = font->bitmap;
@@ -221,36 +317,22 @@ uint16_t ILI934X::writeChar(uint16_t x, uint16_t y, char chr, uint8_t r, uint8_t
             {
                 if (size_x == 1 && size_y == 1)
                 {
-                    setPixel(x + xo + xx, y + yo + yy, r, g, b);
+                    setPixel(x + xo + xx, y + yo + yy, colour);
                 }
                 else
                 {
                     fillRect(x + (xo16 + xx) * size_x, y + (yo16 + yy) * size_y,
-                             size_x, size_y, r, g, b);
+                             size_x, size_y, colour);
                 }
             }
             bits <<= 1;
         }
     }
-
-    return x + w;
 }
 
-uint16_t ILI934X::writeString(uint16_t x, uint16_t y, char *str, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font)
+void ILI934X::clear(uint16_t colour)
 {
-    uint16_t nextCharX = x;
-    char *c = str;
-    while (*c)
-    {
-        nextCharX = writeChar(nextCharX, y, *c++, r, g, b, size_x, size_y, font);
-    }
-
-    return nextCharX;
-}
-
-void ILI934X::clear(uint8_t r, uint8_t g, uint8_t b)
-{
-    fillRect(0, 0, _height, _width, r, g, b);
+    fillRect(0, 0, _height, _width, colour);
 }
 
 void ILI934X::_write(uint8_t cmd, uint8_t *data, size_t dataLen)

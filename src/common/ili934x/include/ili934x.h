@@ -45,6 +45,24 @@
 
 #define _MAX_CHUNK_SIZE 4096
 
+/* Windows 16 colour pallet converted to 5-6-5 */
+#define COLOUR_BLACK 0x0000
+#define COLOUR_MAROON 0x8000
+#define COLOUR_GREEN 0x0400
+#define COLOUR_OLIVE 0x8400
+#define COLOUR_NAVY 0x0010
+#define COLOUR_PURPLE 0x8010
+#define COLOUR_TEAL 0x0410
+#define COLOUR_SILVER 0xC618
+#define COLOUR_GRAY 0x8410
+#define COLOUR_RED 0xF800
+#define COLOUR_LIME 0x07E0
+#define COLOUR_YELLOW 0xFFE0
+#define COLOUR_BLUE 0x001F
+#define COLOUR_FUCHSIA 0xF81F
+#define COLOUR_AQUA 0x07FF
+#define COLOUR_WHITE 0xFFFF
+
 enum ILI934X_ROTATION
 {
     R0DEG,
@@ -65,12 +83,13 @@ public:
     void reset();
     void init();
     void setRotation(ILI934X_ROTATION rotation = R0DEG);
-    void setPixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b);
-    void fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r, uint8_t g, uint8_t b);
-    void clear(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
+    void setPixel(uint16_t x, uint16_t y, uint16_t colour);
+    void fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour);
+    void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
+    void drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
+    void clear(uint16_t colour = COLOUR_BLACK);
     void blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *bltBuf);
-    uint16_t writeChar(uint16_t x, uint16_t y, char c, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font);
-    uint16_t writeString(uint16_t x, uint16_t y, char *str, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font);
+    void drawChar(uint16_t x, uint16_t y, char c, uint16_t colour, uint8_t size_x, uint8_t size_y, GFXfont *font);
 
     uint16_t colour565(uint8_t r, uint8_t g, uint8_t b);
 private:
