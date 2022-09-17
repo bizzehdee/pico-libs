@@ -1,6 +1,7 @@
 #ifndef __ILI934X_H__
 #define __ILI934X_H__
 
+#include "gfxfont.h"
 #include "hardware/spi.h"
 
 #define _RDDSDR 0x0f    // Read Display Self-Diagnostic Result
@@ -68,6 +69,8 @@ public:
     void fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint8_t r, uint8_t g, uint8_t b);
     void clear(uint8_t r = 0, uint8_t g = 0, uint8_t b = 0);
     void blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *bltBuf);
+    uint16_t writeChar(uint16_t x, uint16_t y, char c, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font);
+    uint16_t writeString(uint16_t x, uint16_t y, char *str, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font);
 
     uint16_t colour565(uint8_t r, uint8_t g, uint8_t b);
 private:

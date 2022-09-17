@@ -11,5 +11,5 @@ if (NOT TARGET ili934x)
             ${CMAKE_CURRENT_LIST_DIR}/ili934x.cpp
     )
 
-    target_link_libraries(ili934x INTERFACE ili934x_headers hardware_gpio)
+    target_link_libraries(ili934x INTERFACE ili934x_headers hardware_gpio fonts)
 endif()

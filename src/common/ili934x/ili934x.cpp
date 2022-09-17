@@ -4,6 +4,16 @@
 #include "hardware/gpio.h"
 #include <cstring>
 
+#ifndef pgm_read_byte
+#define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+#endif
+#ifndef pgm_read_word
+#define pgm_read_word(addr) (*(const unsigned short *)(addr))
+#endif
+#ifndef pgm_read_dword
+#define pgm_read_dword(addr) (*(const unsigned long *)(addr))
+#endif
+
 ILI934X::ILI934X(spi_inst_t *spi, uint8_t cs, uint8_t dc, uint8_t rst, uint16_t width, uint16_t height, ILI934X_ROTATION rotation)
 {
     _spi = spi;
@@ -160,24 +170,82 @@ void ILI934X::blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *blt
     {
         for (uint16_t ix = 0; ix < _w; ix++)
         {
-            uint16_t idx = ix+iy*w - written;
-            if(idx >= _MAX_CHUNK_SIZE)
+            uint16_t idx = ix + iy * w - written;
+            if (idx >= _MAX_CHUNK_SIZE)
             {
                 _data((uint8_t *)buffer, _MAX_CHUNK_SIZE * 2);
                 written += _MAX_CHUNK_SIZE;
-                idx   -= _MAX_CHUNK_SIZE;
+                idx -= _MAX_CHUNK_SIZE;
             }
 
-            buffer[idx] = bltBuf[ix+iy*w]; // get pixel from blt buffer
+            buffer[idx] = bltBuf[ix + iy * w]; // get pixel from blt buffer
         }
     }
 
-    remaining = w*h - written;
+    remaining = w * h - written;
 
     if (remaining > 0)
     {
         _data((uint8_t *)buffer, remaining * 2);
     }
+}
+
+uint16_t ILI934X::writeChar(uint16_t x, uint16_t y, char chr, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font)
+{
+    // https://github.com/adafruit/Adafruit-GFX-Library/blob/master/Adafruit_GFX.cpp#L1181
+    char c = chr - (uint8_t)pgm_read_byte(&font->first);
+    GFXglyph *glyph = font->glyph + c;
+    uint8_t *bitmap = font->bitmap;
+    uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
+    uint8_t w = pgm_read_byte(&glyph->width), h = pgm_read_byte(&glyph->height);
+    int8_t xo = pgm_read_byte(&glyph->xOffset),
+           yo = pgm_read_byte(&glyph->yOffset);
+    uint8_t xx, yy, bits = 0, bit = 0;
+    int16_t xo16 = 0, yo16 = 0;
+
+    if (size_x > 1 || size_y > 1)
+    {
+        xo16 = xo;
+        yo16 = yo;
+    }
+
+    for (yy = 0; yy < h; yy++)
+    {
+        for (xx = 0; xx < w; xx++)
+        {
+            if (!(bit++ & 7))
+            {
+                bits = pgm_read_byte(&bitmap[bo++]);
+            }
+            if (bits & 0x80)
+            {
+                if (size_x == 1 && size_y == 1)
+                {
+                    setPixel(x + xo + xx, y + yo + yy, r, g, b);
+                }
+                else
+                {
+                    fillRect(x + (xo16 + xx) * size_x, y + (yo16 + yy) * size_y,
+                             size_x, size_y, r, g, b);
+                }
+            }
+            bits <<= 1;
+        }
+    }
+
+    return x + w;
+}
+
+uint16_t ILI934X::writeString(uint16_t x, uint16_t y, char *str, uint8_t r, uint8_t g, uint8_t b, uint8_t size_x, uint8_t size_y, GFXfont *font)
+{
+    uint16_t nextCharX = x;
+    char *c = str;
+    while (*c)
+    {
+        nextCharX = writeChar(nextCharX, y, *c++, r, g, b, size_x, size_y, font);
+    }
+
+    return nextCharX;
 }
 
 void ILI934X::clear(uint8_t r, uint8_t g, uint8_t b)
