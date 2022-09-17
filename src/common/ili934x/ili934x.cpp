@@ -319,7 +319,7 @@ void ILI934X::blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *blt
     }
 }
 
-void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, uint8_t size_x, uint8_t size_y, GFXfont *font)
+void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, GFXfont *font)
 {
     char c = chr - (uint8_t)pgm_read_byte(&font->first);
     GFXglyph *glyph = font->glyph + c;
@@ -329,13 +329,6 @@ void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, uint8_
     int8_t xo = pgm_read_byte(&glyph->xOffset),
            yo = pgm_read_byte(&glyph->yOffset);
     uint8_t xx, yy, bits = 0, bit = 0;
-    int16_t xo16 = 0, yo16 = 0;
-
-    if (size_x > 1 || size_y > 1)
-    {
-        xo16 = xo;
-        yo16 = yo;
-    }
 
     for (yy = 0; yy < h; yy++)
     {
@@ -347,18 +340,89 @@ void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, uint8_
             }
             if (bits & 0x80)
             {
-                if (size_x == 1 && size_y == 1)
-                {
-                    setPixel(x + xo + xx, y + yo + yy, colour);
-                }
-                else
-                {
-                    fillRect(x + (xo16 + xx) * size_x, y + (yo16 + yy) * size_y,
-                             size_x, size_y, colour);
-                }
+                setPixel(x + xo + xx, y + yo + yy, colour);
             }
             bits <<= 1;
         }
+    }
+}
+
+void ILI934X::charBounds(char c, int16_t *x, int16_t *y, int16_t *minx, int16_t *miny, int16_t *maxx, int16_t *maxy, GFXfont *font)
+{
+    bool wrap = false; // temp no wrap for now
+    if (c == '\n')     // Newline?
+    {
+        *x = 0; // Reset x to zero, advance y by one line
+        *y += 1 * (uint8_t)pgm_read_byte(&font->yAdvance);
+    }
+    else if (c != '\r') // Not a carriage return; is normal char
+    {
+        uint8_t first = pgm_read_byte(&font->first),
+                last = pgm_read_byte(&font->last);
+        if ((c >= first) && (c <= last)) // Char present in this font?
+        {
+            GFXglyph *glyph = font->glyph + (c - first);
+            uint8_t gw = pgm_read_byte(&glyph->width),
+                    gh = pgm_read_byte(&glyph->height),
+                    xa = pgm_read_byte(&glyph->xAdvance);
+            int8_t xo = pgm_read_byte(&glyph->xOffset),
+                   yo = pgm_read_byte(&glyph->yOffset);
+
+            if (wrap && ((*x + (((int16_t)xo + gw) * 1)) > _width))
+            {
+                *x = 0; // Reset x to zero, advance y by one line
+                *y += 1 * (uint8_t)pgm_read_byte(&font->yAdvance);
+            }
+            int16_t tsx = (int16_t)1, tsy = (int16_t)1,
+                    x1 = *x + xo * tsx, y1 = *y + yo * tsy, x2 = x1 + gw * tsx - 1,
+                    y2 = y1 + gh * tsy - 1;
+            if (x1 < *minx)
+            {
+                *minx = x1;
+            }
+            if (y1 < *miny)
+            {
+                *miny = y1;
+            }
+            if (x2 > *maxx)
+            {
+                *maxx = x2;
+            }
+            if (y2 > *maxy)
+            {
+                *maxy = y2;
+            }
+            *x += xa * tsx;
+        }
+    }
+}
+
+void ILI934X::textBounds(const char *str, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h, GFXfont *font)
+{
+    uint8_t c;                                                  // Current character
+    int16_t minx = 0x7FFF, miny = 0x7FFF, maxx = -1, maxy = -1; // Bound rect
+    // Bound rect is intentionally initialized inverted, so 1st char sets it
+
+    *x1 = x; // Initial position is value passed in
+    *y1 = y;
+    *w = *h = 0; // Initial size is zero
+
+    while ((c = *str++))
+    {
+        // charBounds() modifies x/y to advance for each character,
+        // and min/max x/y are updated to incrementally build bounding rect.
+        charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
+    }
+
+    if (maxx >= minx)
+    {                         // If legit string bounds were found...
+        *x1 = minx;           // Update x1 to least X coord,
+        *w = maxx - minx + 1; // And w to bound rect width
+    }
+    if (maxy >= miny)
+    { // Same for height
+        *y1 = miny;
+        *h = maxy - miny + 1;
     }
 }
 
