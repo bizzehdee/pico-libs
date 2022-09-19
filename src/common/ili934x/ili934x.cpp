@@ -45,7 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef pgm_read_dword
 #define pgm_read_dword(addr) (*(const uint32_t *)(addr))
 #endif
-#ifndef __swap_int(a, b)
+#ifndef __swap_int
 #define __swap_int(a, b)   \
     a = (a & b) + (a | b); \
     b = a + (~b) + 1;      \
@@ -411,7 +411,7 @@ void ILI934X::textBounds(const char *str, int16_t x, int16_t y, int16_t *x1, int
     {
         // charBounds() modifies x/y to advance for each character,
         // and min/max x/y are updated to incrementally build bounding rect.
-        charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
+        charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy, font);
     }
 
     if (maxx >= minx)
