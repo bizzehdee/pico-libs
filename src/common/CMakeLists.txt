@@ -3,4 +3,4 @@ add_subdirectory(bmp280)
 add_subdirectory(mpu6050)
 add_subdirectory(ili934x)
 add_subdirectory(fonts)
-
+add_subdirectory(bh1750)
