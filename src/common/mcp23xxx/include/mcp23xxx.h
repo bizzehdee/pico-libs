@@ -67,6 +67,7 @@ public:
    void gpio_put(uint8_t gpio, bool value);
    uint8_t gpio_get_all(uint8_t port = 0); //0 == A, 1 == B
    void gpio_put_all(uint8_t value, uint8_t port = 0); //0 == A, 1 == B
+   void gpio_set_irq_enabled(uint8_t gpio, uint32_t event_mask, bool enabled);
 
 protected:
    uint8_t pinCount = 0; ///< Total number of GPIO pins

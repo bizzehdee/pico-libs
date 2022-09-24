@@ -1,11 +1,12 @@
 #include "mcp23xxx.h"
 #include "bus_register.h"
 #include "bus_register_bits.h"
+#include <hardware/gpio.h>
 #include <stdio.h>
 
 MCP23XXX::~MCP23XXX()
 {
-    if(i2c_dev)
+    if (i2c_dev)
     {
         delete i2c_dev;
     }
@@ -57,18 +58,31 @@ void MCP23XXX::gpio_put(uint8_t gpio, bool value)
     pin_bit.write((value == false) ? 0 : 1);
 }
 
-
 uint8_t MCP23XXX::gpio_get_all(uint8_t port)
 {
-  BusRegister GPIO(i2c_dev, getRegister(MCP23XXX_GPIO, port));
-  return GPIO.read() & 0xFF;
+    BusRegister GPIO(i2c_dev, getRegister(MCP23XXX_GPIO, port));
+    return GPIO.read() & 0xFF;
 }
-
 
 void MCP23XXX::gpio_put_all(uint8_t value, uint8_t port)
 {
-  BusRegister GPIO(i2c_dev, getRegister(MCP23XXX_GPIO, port));
-  GPIO.write(value);
+    BusRegister GPIO(i2c_dev, getRegister(MCP23XXX_GPIO, port));
+    GPIO.write(value);
+}
+
+void MCP23XXX::gpio_set_irq_enabled(uint8_t gpio, uint32_t event_mask, bool enabled)
+{
+    BusRegister GPINTEN(i2c_dev, getRegister(MCP23XXX_GPINTEN, MCP_PORT(gpio)));
+    BusRegister INTCON(i2c_dev, getRegister(MCP23XXX_INTCON, MCP_PORT(gpio)));
+    BusRegister DEFVAL(i2c_dev, getRegister(MCP23XXX_DEFVAL, MCP_PORT(gpio)));
+
+    BusRegisterBits enable_bit(&GPINTEN, 1, gpio % 8);
+    BusRegisterBits config_bit(&INTCON, 1, gpio % 8);
+    BusRegisterBits defval_bit(&DEFVAL, 1, gpio % 8);
+
+    enable_bit.write(enabled ? 1 : 0);
+    config_bit.write(((event_mask | GPIO_IRQ_LEVEL_LOW == GPIO_IRQ_LEVEL_LOW) || (event_mask | GPIO_IRQ_LEVEL_HIGH == GPIO_IRQ_LEVEL_HIGH) ) ? 1 : 0);
+    defval_bit.write((event_mask | GPIO_IRQ_LEVEL_LOW == GPIO_IRQ_LEVEL_LOW) ? 1 : 0);
 }
 
 uint16_t MCP23XXX::getRegister(uint8_t baseAddress, uint8_t port)
