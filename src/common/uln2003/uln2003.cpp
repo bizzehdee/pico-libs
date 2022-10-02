@@ -138,14 +138,14 @@ void ULN2003::nextCW()
 void ULN2003::nextACW()
 {
    _seqNumber--;
-   if (_seqNumber > 7)
+   if (_seqNumber < 0)
    {
-      _seqNumber = 0; // roll over to A seq
+      _seqNumber = 7; // roll over to A seq
    }
    next(_seqNumber);
 
    _stepNumber--; // track miniSteps
-   if (_stepNumber >= _totalSteps)
+   if (_stepNumber < 0)
    {
       _stepNumber += _totalSteps; // keep stepN within 0-(totalSteps-1)
    }
@@ -153,7 +153,7 @@ void ULN2003::nextACW()
 
 void ULN2003::next(int32_t n)
 {
-   int pattern[4];
+   int32_t pattern[4];
 
    switch (n)
    {
@@ -231,9 +231,9 @@ void ULN2003::next(int32_t n)
    }
    }
 
-   for (int p = 0; p < 4; p++)
+   for (int32_t p = 0; p < 4; p++)
    {
-      gpio_put(_pins[p], pattern[p] == 1);
+      gpio_put(_pins[p], pattern[p]);
    }
 
    sleep_us(_delay);

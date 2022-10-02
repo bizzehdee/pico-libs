@@ -66,7 +66,7 @@ private:
 
 private:
     int32_t _totalSteps = 4096;
-    uint32_t _delay = 1000;
+    uint32_t _delay = 900;
     uint32_t _pins[4];
 
     int32_t _stepNumber = 0;
