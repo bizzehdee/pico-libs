@@ -11,6 +11,7 @@ All libraries are native C++ libraries for the Raspberry Pi Pico for use with th
 | MCP23XXX | I2C library for MCP23X08 and MCP23X17 GPIO expander |
 | DS1307 | I2C library for the DS1307 RTC module |
 | ULN2003 | GPIO library for the generic/cheap ULN2003 stepper motor driver |
+| PCA9685 | I2C library for the PCA9685 PWM 16 Channel Servo Driver |
 
 ## Usage
 
