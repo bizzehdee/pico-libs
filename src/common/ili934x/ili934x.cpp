@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hardware/gpio.h"
 #include "pico/time.h"
 #include <cstring>
+#include "pico/time.h"
 
 #ifndef pgm_read_byte
 #define pgm_read_byte(addr) (*(const uint8_t *)(addr))
@@ -163,6 +164,14 @@ void ILI934X::setPixel(uint16_t x, uint16_t y, uint16_t colour)
     _writeBlock(x, y, x, y, (uint8_t *)buffer, 2);
 }
 
+void ILI934X::drawRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour)
+{
+  drawHLine(x, y, w, colour);
+  drawHLine(x, y + h - 1, w, colour);
+  drawVLine(x, y, h, colour);
+  drawVLine(x + w - 1, y, h, colour);
+}
+
 void ILI934X::fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour)
 {
     uint16_t _x = MIN(_width - 1, MAX(0, x));
@@ -245,6 +254,16 @@ void ILI934X::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint1
             err += dx;
         }
     }
+}
+
+void ILI934X::drawHLine(uint16_t x, uint16_t y, uint16_t w, uint16_t color)
+{
+    drawLine(x, y, x + w - 1, y, color);
+}
+
+void ILI934X::drawVLine(uint16_t x, uint16_t y, uint16_t h, uint16_t color)
+{
+    drawLine(x, y, x, y + h - 1, color);
 }
 
 void ILI934X::drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color)
@@ -345,6 +364,22 @@ void ILI934X::drawChar(uint16_t x, uint16_t y, char chr, uint16_t colour, GFXfon
             }
             bits <<= 1;
         }
+    }
+}
+
+void ILI934X::drawText(const char *str, uint16_t x, uint16_t y, uint16_t colour, GFXfont *font)
+{
+    char c = 0;
+
+    int16_t nextX = x;
+    int16_t nextY = y;
+
+    int16_t minx = 0x7FFF, miny = 0x7FFF, maxx = -1, maxy = -1;
+
+    while ((c = *str++))
+    {
+        drawChar(nextX, nextY, c, colour, font);
+        charBounds(c, &nextX, &nextY, &minx, &miny, &maxx, &maxy, font);
     }
 }
 

@@ -116,12 +116,16 @@ public:
     void init();
     void setRotation(ILI934X_ROTATION rotation = R0DEG);
     void setPixel(uint16_t x, uint16_t y, uint16_t colour);
+    void drawRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour);
     void fillRect(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t colour);
     void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
+    void drawHLine(uint16_t x, uint16_t y, uint16_t w, uint16_t color);
+    void drawVLine(uint16_t x, uint16_t y, uint16_t h, uint16_t color);
     void drawCircle(uint16_t x0, uint16_t y0, uint16_t r, uint16_t color);
     void clear(uint16_t colour = COLOUR_BLACK);
     void blit(uint16_t x, uint16_t y, uint16_t h, uint16_t w, uint16_t *bltBuf);
     void drawChar(uint16_t x, uint16_t y, char c, uint16_t colour, GFXfont *font);
+    void drawText(const char *str, uint16_t x, uint16_t y, uint16_t colour, GFXfont *font);
     void charBounds(char c, int16_t *x, int16_t *y, int16_t *minx, int16_t *miny, int16_t *maxx, int16_t *maxy, GFXfont *font);
     void textBounds(const char *str, int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h, GFXfont *font);
 
@@ -145,5 +149,3 @@ private:
 };
 
 #endif //__ILI934X_H__
-
-// https://github.com/jeffmer/micropython-ili9341/blob/master/ili934xnew.py
