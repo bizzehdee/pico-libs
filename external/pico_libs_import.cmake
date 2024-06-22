@@ -27,7 +27,7 @@ if (NOT PICO_LIBS_PATH)
         endif ()
         FetchContent_Declare(
                 pico_libs
-                GIT_REPOSITORY https://github.com/bizzehdee/pico_libs
+                GIT_REPOSITORY https://github.com/bizzehdee/pico-libs
                 GIT_TAG master
         )
         if (NOT pico_libs)
