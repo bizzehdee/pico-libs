@@ -17,6 +17,10 @@ All libraries are native C++ libraries for the Raspberry Pi Pico for use with th
 | WS2812 | PIO library for WS2812/WS2812B/SK6812 addressable RGB(W) LED strips |
 | RTClib | I2C library for the DS3231 and PCF8523 RTC modules |
 | PN532 | I2C library for the PN532 NFC/RFID reader |
+| DRV8830 | I2C library for the DRV8830 DC motor driver |
+| ADS1X15 | I2C library for the ADS1015/ADS1115 4-channel ADCs |
+| CCS811 | I2C library for the CCS811 eCO2/TVOC air quality sensor |
+| MPL115A2 | I2C library for the MPL115A2 barometric pressure and temperature sensor |
 
 ## Usage
 
