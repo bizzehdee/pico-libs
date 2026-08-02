@@ -10,6 +10,7 @@ if (NOT TARGET rtclib)
     target_sources(rtclib INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/rtc_i2c.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ds3231.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/pcf8523.cpp
     )
 
     target_link_libraries(rtclib INTERFACE rtclib_headers)
