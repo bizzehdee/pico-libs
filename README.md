@@ -12,6 +12,11 @@ All libraries are native C++ libraries for the Raspberry Pi Pico for use with th
 | DS1307 | I2C library for the DS1307 RTC module |
 | ULN2003 | GPIO library for the generic/cheap ULN2003 stepper motor driver |
 | PCA9685 | I2C library for the PCA9685 PWM 16 Channel Servo Driver |
+| SSD1306 | I2C library for the SSD1306 OLED display driver |
+| LIS331 | I2C library for the LIS331/LIS331HH triple-axis accelerometer |
+| WS2812 | PIO library for WS2812/WS2812B/SK6812 addressable RGB(W) LED strips |
+| RTClib | I2C library for the DS3231 and PCF8523 RTC modules |
+| PN532 | I2C library for the PN532 NFC/RFID reader |
 
 ## Usage
 
